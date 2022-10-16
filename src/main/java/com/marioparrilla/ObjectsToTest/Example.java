@@ -1,4 +1,4 @@
-package com.marioparrilla.Context;
+package com.marioparrilla.ObjectsToTest;
 
 public class Example {
 

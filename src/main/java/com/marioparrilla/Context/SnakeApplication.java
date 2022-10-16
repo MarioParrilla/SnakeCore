@@ -33,6 +33,7 @@ public class SnakeApplication implements ApplicationContext {
         return new SnakeApplication(mainClass, args);
     }
 
+    @Override
     public ApplicationContext run() throws Exception {
         createEggOfMainClass();
         createEggs();
@@ -108,12 +109,22 @@ public class SnakeApplication implements ApplicationContext {
     }
 
     @Override
-    public <T> T getEgg(Class<T> clazz, String eggName) {
+    public <T> T getEgg(String eggName, Class<T> clazz) {
         return (T) eggs.get(eggName);
     }
 
     @Override
     public boolean containsEgg(String eggName) {
         return eggs.containsKey(eggName);
+    }
+
+    @Override
+    public boolean containsEgg(Class<?> clazz) {
+        return false;
+    }
+
+    @Override
+    public boolean containsEgg(String eggName, Class<?> clazz) {
+        return false;
     }
 }

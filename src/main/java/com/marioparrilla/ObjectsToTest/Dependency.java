@@ -1,8 +1,8 @@
-package com.marioparrilla.Context;
+package com.marioparrilla.ObjectsToTest;
 
 import com.marioparrilla.Annotations.OpenEgg;
 
-public class Injection {
+public class Dependency {
 
     @OpenEgg
     Example example;
