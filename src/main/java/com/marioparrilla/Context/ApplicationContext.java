@@ -34,7 +34,7 @@ public interface ApplicationContext {
      * @param clazz The class of the egg
      * @return The egg that was saved with this class
      */
-    <T> T getEgg(Class<T> clazz);
+    <T> T getEgg(Class<T> clazz) throws Exception;
 
 
     /**
@@ -43,7 +43,7 @@ public interface ApplicationContext {
      * @param clazz The class of the egg
      * @return The egg that was saved with this class and name
      */
-    <T> T getEgg(String eggName, Class<T> clazz);
+    <T> T getEgg(String eggName, Class<T> clazz) throws Exception;
 
     /**
      * @param eggName The name of the egg

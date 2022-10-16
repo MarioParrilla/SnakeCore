@@ -104,13 +104,20 @@ public class SnakeApplication implements ApplicationContext {
     }
 
     @Override
-    public <T> T getEgg(Class<T> clazz) {
-        return null;
+    public <T> T getEgg(Class<T> clazz) throws Exception {
+        for (Object classes : eggs.values()) {
+            if(classes.getClass() ==  clazz)
+                return (T) classes;
+        }
+        throw new Exception("No Egg found");
     }
 
     @Override
-    public <T> T getEgg(String eggName, Class<T> clazz) {
-        return (T) eggs.get(eggName);
+    public <T> T getEgg(String eggName, Class<T> clazz) throws Exception {
+        var obj = eggs.get(eggName);
+        if(obj.getClass() ==  clazz)
+            return (T) obj;
+        throw new Exception("No Egg found");
     }
 
     @Override
@@ -120,11 +127,16 @@ public class SnakeApplication implements ApplicationContext {
 
     @Override
     public boolean containsEgg(Class<?> clazz) {
+        for (Object classes : eggs.values()) {
+            if(classes.getClass() ==  clazz)
+                return true;
+        }
         return false;
     }
 
     @Override
     public boolean containsEgg(String eggName, Class<?> clazz) {
-        return false;
+        var obj = eggs.get(eggName);
+        return obj.getClass() ==  clazz;
     }
 }
