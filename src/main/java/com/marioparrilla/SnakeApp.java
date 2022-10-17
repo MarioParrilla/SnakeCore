@@ -17,11 +17,10 @@ public class SnakeApp {
                 .registerCestEggsClass(new Class[] {SnakeApp.class, Cest.class})
                 .classesToScan(new Class[] {SnakeApp.class, Dependency.class})
                 .run();
-
         dependency.sayHello();
     }
 
-    @Egg
+    @Egg(name = "exa")
     public Example getExample() {
         return new Example();
     }

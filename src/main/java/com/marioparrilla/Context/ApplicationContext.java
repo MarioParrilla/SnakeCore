@@ -23,14 +23,12 @@ public interface ApplicationContext {
 
 
     /**
-     * In the future you can set a custom name to the eggs
      * @param eggName The name of the egg
      * @return The egg that was saved with this name
      */
     Object getEgg(String eggName);
 
     /**
-     * In the future you can set a custom name to the eggs
      * @param clazz The class of the egg
      * @return The egg that was saved with this class
      */
@@ -38,7 +36,6 @@ public interface ApplicationContext {
 
 
     /**
-     * In the future you can set a custom name to the eggs
      * @param eggName The name of the egg
      * @param clazz The class of the egg
      * @return The egg that was saved with this class and name

@@ -36,7 +36,7 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public ApplicationContext run() throws Exception {
         createEggOfMainClass();
-        createEggs();
+        registerEggFromCests();
         openEggs();
         return this;
     }
@@ -45,9 +45,9 @@ public class SnakeApplication implements ApplicationContext {
         eggs.put(mainClass.getSimpleName(), mainClass.getDeclaredConstructor().newInstance());
     }
 
-    private void createEggs() throws Exception {
+    private void registerEggFromCests() throws Exception {
         if (cest ==  null || cest.length < 1) {
-            throw new Exception("The Cest need to be registered");
+            throw new Exception("The Cest need to have eggs registered");
         }
         logger.info("Creating the eggs");
         for (Class<?> clazz : cest) {
@@ -55,14 +55,21 @@ public class SnakeApplication implements ApplicationContext {
             for (Method method : clazz.getMethods()) {
                 if (method.isAnnotationPresent(Egg.class)) {
                     Class<?> type = method.getReturnType();
-                    eggs.put(type.getSimpleName(), type.getDeclaredConstructor().newInstance());
-                    logger.info("The egg "+type.getSimpleName()+" was created");
+                    String name = method.getAnnotation(Egg.class).name().isEmpty()
+                            ? type.getSimpleName()
+                            : method.getAnnotation(Egg.class).name();
+                    eggs.put(name, type.getDeclaredConstructor().newInstance());
+                    logger.info("The egg "+name+" with the type "+type.getSimpleName()+" was created");
                 }
             }
         }
     }
 
-    private void openEggs() throws IllegalAccessException {
+    private void openEggs() throws Exception {
+        if (eggs.size() < 1)
+            throw new Exception("No exists egg");
+        if (classesToScan ==  null || classesToScan.length < 1)
+            throw new Exception("No exists classes to be scanned");
         logger.info("Opening the eggs");
         for (Class<?> clazz : classesToScan) {
             logger.info("Opening eggs of "+clazz.getName());
@@ -71,8 +78,21 @@ public class SnakeApplication implements ApplicationContext {
                 logger.info("Egg "+field.getType().getSimpleName());
 
                 if (field.isAnnotationPresent(OpenEgg.class)) {
+                    String name = field.getAnnotation(OpenEgg.class).name().isEmpty()
+                            ? field.getType().getSimpleName()
+                            : field.getAnnotation(OpenEgg.class).name();
                     Object selfInstance = eggs.get(clazz.getSimpleName());
-                    Object injection = eggs.get(field.getType().getSimpleName());
+                    Object injection = eggs.get(name);
+
+                    if (injection ==  null) {
+                        for (Object obj : eggs.values()) {
+                            if (obj.getClass() ==  field.getType())
+                                injection = obj;
+                        }
+                    }
+
+                    if (injection ==  null)
+                        throw new Exception("No egg found with the class "+field.getType());
 
                     boolean isAccessible = field.isAccessible();
                     if (!isAccessible)
@@ -80,7 +100,7 @@ public class SnakeApplication implements ApplicationContext {
                     field.set(selfInstance, injection);
                     if (!isAccessible)
                         field.setAccessible(false);
-                    logger.info("The Egg "+field.getName()+" was instanced");
+                    logger.info("The Egg "+field.getName()+" was instanced with the name "+name);
                 }
             }
         }
@@ -117,7 +137,7 @@ public class SnakeApplication implements ApplicationContext {
         var obj = eggs.get(eggName);
         if(obj.getClass() ==  clazz)
             return (T) obj;
-        throw new Exception("No Egg found");
+        throw new Exception("No Egg found with this name or class");
     }
 
     @Override
@@ -137,6 +157,6 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public boolean containsEgg(String eggName, Class<?> clazz) {
         var obj = eggs.get(eggName);
-        return obj.getClass() ==  clazz;
+        return obj !=  null && obj.getClass() ==  clazz;
     }
 }
