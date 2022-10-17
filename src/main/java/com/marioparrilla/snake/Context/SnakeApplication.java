@@ -52,13 +52,14 @@ public class SnakeApplication implements ApplicationContext {
         logger.info("Creating the eggs");
         for (Class<?> clazz : cest) {
             logger.info("Class Cest: "+clazz.getName());
+            Object classInstance = clazz.getDeclaredConstructor().newInstance();
             for (Method method : clazz.getMethods()) {
                 if (method.isAnnotationPresent(Egg.class)) {
                     Class<?> type = method.getReturnType();
                     String name = method.getAnnotation(Egg.class).name().isEmpty()
                             ? type.getSimpleName()
                             : method.getAnnotation(Egg.class).name();
-                    eggs.put(name, type.getDeclaredConstructor().newInstance());
+                    eggs.put(name, method.invoke(classInstance));
                     logger.info("The egg "+name+" with the type "+type.getSimpleName()+" was created");
                 }
             }

@@ -21,6 +21,6 @@ public class SnakeApp {
 
     @Egg(name = "exa")
     public Example getExample() {
-        return new Example();
+        return new Example("mario");
     }
 }
