@@ -1,0 +1,8 @@
+com\marioparrilla\snake\Context\SnakeApplication.class
+com\marioparrilla\snake\Annotations\Egg.class
+com\marioparrilla\snake\Annotations\OpenEgg.class
+com\marioparrilla\snake\ObjectsToTest\Dependency.class
+com\marioparrilla\snake\ObjectsToTest\Example.class
+com\marioparrilla\snake\Context\ApplicationContext.class
+com\marioparrilla\snake\Cest.class
+com\marioparrilla\snake\SnakeApp.class
