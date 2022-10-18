@@ -22,6 +22,8 @@ public class SnakeApplication implements ApplicationContext {
 
     private HashMap<String, Object> eggs;
 
+    private boolean showTrace = false;
+
     private SnakeApplication() {}
 
     private SnakeApplication(Class<?> mainClass, String... args) {
@@ -49,9 +51,12 @@ public class SnakeApplication implements ApplicationContext {
         if (cest ==  null || cest.length < 1) {
             throw new Exception("The Cest need to have eggs registered");
         }
-        logger.info("Creating the eggs");
+        if (showTrace)
+            logger.info("Creating the eggs");
+
         for (Class<?> clazz : cest) {
-            logger.info("Class Cest: "+clazz.getName());
+            if (showTrace)
+                logger.info("Class Cest: "+clazz.getName());
             Object classInstance = clazz.getDeclaredConstructor().newInstance();
             for (Method method : clazz.getMethods()) {
                 if (method.isAnnotationPresent(Egg.class)) {
@@ -60,7 +65,8 @@ public class SnakeApplication implements ApplicationContext {
                             ? type.getSimpleName()
                             : method.getAnnotation(Egg.class).name();
                     eggs.put(name, method.invoke(classInstance));
-                    logger.info("The egg "+name+" with the type "+type.getSimpleName()+" was created");
+                    if (showTrace)
+                        logger.info("The egg "+name+" with the type "+type.getSimpleName()+" was created");
                 }
             }
         }
@@ -71,12 +77,15 @@ public class SnakeApplication implements ApplicationContext {
             throw new Exception("No exists egg");
         if (classesToScan ==  null || classesToScan.length < 1)
             throw new Exception("No exists classes to be scanned");
-        logger.info("Opening the eggs");
+        if (showTrace)
+            logger.info("Opening the eggs");
         for (Class<?> clazz : classesToScan) {
-            logger.info("Opening eggs of "+clazz.getName());
+            if (showTrace)
+                logger.info("Opening eggs of "+clazz.getName());
 
             for (Field field : clazz.getDeclaredFields()) {
-                logger.info("Egg "+field.getType().getSimpleName());
+                if (showTrace)
+                    logger.info("Egg "+field.getType().getSimpleName());
 
                 if (field.isAnnotationPresent(OpenEgg.class)) {
                     String name = field.getAnnotation(OpenEgg.class).name().isEmpty()
@@ -101,7 +110,8 @@ public class SnakeApplication implements ApplicationContext {
                     field.set(selfInstance, injection);
                     if (!isAccessible)
                         field.setAccessible(false);
-                    logger.info("The Egg "+field.getName()+" was instanced with the name "+name);
+                    if (showTrace)
+                        logger.info("The Egg "+field.getName()+" was instanced with the name "+name);
                 }
             }
         }
@@ -116,6 +126,12 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public ApplicationContext classesToScan(Class<?>[] classes){
         this.classesToScan = classes;
+        return this;
+    }
+
+    @Override
+    public ApplicationContext enableTrace() {
+        showTrace = true;
         return this;
     }
 

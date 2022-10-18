@@ -15,6 +15,12 @@ public interface ApplicationContext {
     ApplicationContext classesToScan(Class<?>[] classes);
 
     /**
+     * This method enable the logging via output in console
+     * @return ApplicationContext current context
+     */
+    ApplicationContext enableTrace();
+
+    /**
      * Create the context calling submethods to get the eggs of the classes and inject the eggs.
      * @return ApplicationContext current context
      * @throws Exception
