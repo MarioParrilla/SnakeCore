@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="0" failures="0" name="com.marioparrilla.snake.SnakeAppTest" time="0" errors="0" skipped="0">
+<testsuite tests="5" failures="0" name="com.marioparrilla.snake.SnakeAppTest" time="0.027" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="java.vm.version" value="17.0.3.1+2-LTS-6"/>
@@ -64,4 +64,9 @@
     <property name="sun.stdout.encoding" value="cp850"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
+  <testcase classname="com.marioparrilla.snake.SnakeAppTest" name="com.marioparrilla.snake.SnakeAppTest.testLogInfo" time="0.027"/>
+  <testcase classname="com.marioparrilla.snake.SnakeAppTest" name="com.marioparrilla.snake.SnakeAppTest.testLogWarn" time="0"/>
+  <testcase classname="com.marioparrilla.snake.SnakeAppTest" name="com.marioparrilla.snake.SnakeAppTest.testLogError" time="0"/>
+  <testcase classname="com.marioparrilla.snake.SnakeAppTest" name="com.marioparrilla.snake.SnakeAppTest.testLogDebug" time="0"/>
+  <testcase classname="com.marioparrilla.snake.SnakeAppTest" name="com.marioparrilla.snake.SnakeAppTest.testLogTrace" time="0"/>
 </testsuite>
