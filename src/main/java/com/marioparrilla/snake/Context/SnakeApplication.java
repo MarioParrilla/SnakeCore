@@ -2,17 +2,13 @@ package com.marioparrilla.snake.Context;
 
 import com.marioparrilla.snake.Annotations.Egg;
 import com.marioparrilla.snake.Annotations.OpenEgg;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.marioparrilla.snake.Utils.LogUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
 public class SnakeApplication implements ApplicationContext {
-
-    private final Logger logger = LoggerFactory.getLogger(SnakeApplication.class);
 
     private Class<?> mainClass;
 
@@ -44,6 +40,7 @@ public class SnakeApplication implements ApplicationContext {
     }
 
     private void createEggOfMainClass() throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        LogUtils.info("Creating the egg of the main class "+mainClass.getSimpleName(), SnakeApplication.class, true);
         eggs.put(mainClass.getSimpleName(), mainClass.getDeclaredConstructor().newInstance());
     }
 
@@ -51,12 +48,11 @@ public class SnakeApplication implements ApplicationContext {
         if (cest ==  null || cest.length < 1) {
             throw new Exception("The Cest need to have eggs registered");
         }
-        if (showTrace)
-            logger.info("Creating the eggs");
+
+        LogUtils.info("Creating the eggs", SnakeApplication.class, true);
 
         for (Class<?> clazz : cest) {
-            if (showTrace)
-                logger.info("Class Cest: "+clazz.getName());
+            LogUtils.info("Class Cest: "+clazz.getName(), SnakeApplication.class, showTrace);
             Object classInstance = clazz.getDeclaredConstructor().newInstance();
             for (Method method : clazz.getMethods()) {
                 if (method.isAnnotationPresent(Egg.class)) {
@@ -65,11 +61,11 @@ public class SnakeApplication implements ApplicationContext {
                             ? type.getSimpleName()
                             : method.getAnnotation(Egg.class).name();
                     eggs.put(name, method.invoke(classInstance));
-                    if (showTrace)
-                        logger.info("The egg "+name+" with the type "+type.getSimpleName()+" was created");
+                    LogUtils.info("The egg "+name+" with the type "+type.getSimpleName()+" was created", SnakeApplication.class, showTrace);
                 }
             }
         }
+        LogUtils.info("All eggs were created", SnakeApplication.class, true);
     }
 
     private void openEggs() throws Exception {
@@ -77,15 +73,14 @@ public class SnakeApplication implements ApplicationContext {
             throw new Exception("No exists egg");
         if (classesToScan ==  null || classesToScan.length < 1)
             throw new Exception("No exists classes to be scanned");
-        if (showTrace)
-            logger.info("Opening the eggs");
+
+        LogUtils.info("Opening the eggs", SnakeApplication.class, true);
+
         for (Class<?> clazz : classesToScan) {
-            if (showTrace)
-                logger.info("Opening eggs of "+clazz.getName());
+            LogUtils.info("Opening eggs of "+clazz.getName(), SnakeApplication.class, showTrace);
 
             for (Field field : clazz.getDeclaredFields()) {
-                if (showTrace)
-                    logger.info("Egg "+field.getType().getSimpleName());
+                LogUtils.info("Egg "+field.getType().getSimpleName(), SnakeApplication.class, showTrace);
 
                 if (field.isAnnotationPresent(OpenEgg.class)) {
                     String name = field.getAnnotation(OpenEgg.class).name().isEmpty()
@@ -110,11 +105,12 @@ public class SnakeApplication implements ApplicationContext {
                     field.set(selfInstance, injection);
                     if (!isAccessible)
                         field.setAccessible(false);
-                    if (showTrace)
-                        logger.info("The Egg "+field.getName()+" was instanced with the name "+name);
+                    LogUtils.info("The Egg "+field.getName()+" was instanced with the name "+name, SnakeApplication.class, showTrace);
                 }
             }
         }
+        LogUtils.info("All eggs were opened", SnakeApplication.class, true);
+
     }
 
     @Override
