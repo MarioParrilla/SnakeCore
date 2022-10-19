@@ -1,12 +1,12 @@
 package com.marioparrilla.snake;
 
+import com.marioparrilla.snake.Annotations.Cest;
 import com.marioparrilla.snake.Annotations.Egg;
-import com.marioparrilla.snake.Context.ApplicationContext;
-import com.marioparrilla.snake.Context.SnakeApplication;
 import com.marioparrilla.snake.ObjectsToTest.Dependency;
 import com.marioparrilla.snake.ObjectsToTest.Example;
 
-public class Cest {
+@Cest
+public class CestToTest {
 
     @Egg
     public Dependency getDependency() {
@@ -15,6 +15,6 @@ public class Cest {
 
     @Egg(name = "exa")
     public Example getExample() {
-        return new Example("mario");
+        return new Example("Snake");
     }
 }
