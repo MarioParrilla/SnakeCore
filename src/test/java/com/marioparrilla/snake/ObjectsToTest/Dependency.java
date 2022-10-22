@@ -1,6 +1,6 @@
 package com.marioparrilla.snake.ObjectsToTest;
 
-import com.marioparrilla.snake.Annotations.OpenEgg;
+import com.marioparrilla.snake.annotations.OpenEgg;
 
 public class Dependency {
 
@@ -9,5 +9,12 @@ public class Dependency {
 
     public void sayHello() {
         example.sayHello();
+    }
+
+    @Override
+    public String toString() {
+        return "Dependency{" +
+                "example=" + example +
+                '}';
     }
 }

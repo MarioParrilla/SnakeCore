@@ -1,4 +1,4 @@
-package com.marioparrilla.snake.Context;
+package com.marioparrilla.snake.context;
 
 public interface ApplicationContext {
 
@@ -27,6 +27,10 @@ public interface ApplicationContext {
      */
     ApplicationContext run() throws Exception;
 
+    /**
+     * @return All eggs registered
+     */
+    Object[] getAllEggs();
 
     /**
      * @param eggName The name of the egg
@@ -38,7 +42,7 @@ public interface ApplicationContext {
      * @param clazz The class of the egg
      * @return The egg that was saved with this class
      */
-    <T> T getEgg(Class<T> clazz) throws Exception;
+    <T> T getEgg(Class<T> clazz);
 
 
     /**
@@ -46,7 +50,7 @@ public interface ApplicationContext {
      * @param clazz The class of the egg
      * @return The egg that was saved with this class and name
      */
-    <T> T getEgg(String eggName, Class<T> clazz) throws Exception;
+    <T> T getEgg(String eggName, Class<T> clazz);
 
     /**
      * @param eggName The name of the egg
