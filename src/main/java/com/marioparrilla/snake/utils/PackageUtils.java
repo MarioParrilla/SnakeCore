@@ -1,4 +1,4 @@
-package com.marioparrilla.snake.Utils;
+package com.marioparrilla.snake.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

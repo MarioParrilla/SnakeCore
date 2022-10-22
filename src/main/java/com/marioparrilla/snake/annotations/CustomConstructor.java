@@ -1,4 +1,4 @@
-package com.marioparrilla.snake.Annotations;
+package com.marioparrilla.snake.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface AutoConfig {
+public @interface CustomConstructor {
 }

@@ -1,4 +1,4 @@
-package com.marioparrilla.snake.Utils;
+package com.marioparrilla.snake.utils;
 
 import org.slf4j.LoggerFactory;
 

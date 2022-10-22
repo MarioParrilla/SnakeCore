@@ -1,6 +1,6 @@
 package com.marioparrilla.snake.ObjectsToTest;
 
-import com.marioparrilla.snake.Annotations.OpenEgg;
+import com.marioparrilla.snake.annotations.OpenEgg;
 
 public class Dependency {
 

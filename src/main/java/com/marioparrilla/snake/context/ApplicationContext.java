@@ -1,4 +1,4 @@
-package com.marioparrilla.snake.Context;
+package com.marioparrilla.snake.context;
 
 public interface ApplicationContext {
 

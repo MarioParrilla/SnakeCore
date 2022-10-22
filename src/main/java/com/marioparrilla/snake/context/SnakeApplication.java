@@ -1,12 +1,8 @@
-package com.marioparrilla.snake.Context;
+package com.marioparrilla.snake.context;
 
-import com.marioparrilla.snake.Annotations.AutoConfig;
-import com.marioparrilla.snake.Annotations.Cest;
-import com.marioparrilla.snake.Annotations.Egg;
-import com.marioparrilla.snake.Annotations.OpenEgg;
-import com.marioparrilla.snake.Utils.LogUtils;
-import com.marioparrilla.snake.Utils.PackageUtils;
-
+import com.marioparrilla.snake.annotations.*;
+import com.marioparrilla.snake.utils.LogUtils;
+import com.marioparrilla.snake.utils.PackageUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -15,15 +11,14 @@ import java.util.List;
 
 public class SnakeApplication implements ApplicationContext {
 
+    private static final String ANNOTATIONS_PACKAGE = "com.marioparrilla.snake.annotations";
     private Class<?> mainClass;
 
     private ClassLoader classLoader;
 
     private List<Class<?>> cest;
 
-    private List<String> packages;
-
-    private Class<?>[] classesToScan;
+    private List<Class<?>> classesToScan;
 
     private HashMap<String, Object> eggs;
 
@@ -37,16 +32,19 @@ public class SnakeApplication implements ApplicationContext {
         this.eggs = new HashMap<>();
         this.mainClass = mainClass;
         this.cest = new ArrayList<>();
-        this.packages = new ArrayList<>();
+        this.classesToScan = new ArrayList<>();
         this.classLoader = Thread.currentThread().getContextClassLoader();
-        for (Package packge : classLoader.getDefinedPackages()) {
-            var packageName = packge.getName();
-            if (packageName.contains(mainClass.getPackageName()))
-                packages.add(packageName);
-        }
         this.isAutoConfigApp = isAutoConfigurableApplication();
-        if(this.isAutoConfigApp)
+        if (this.isAutoConfigApp) {
+            for (Package packge : classLoader.getDefinedPackages()) {
+                var packageName = packge.getName();
+                if (packageName.contains(mainClass.getPackageName()))
+                    if (!packageName.contains(ANNOTATIONS_PACKAGE))
+                        this.classesToScan = PackageUtils.getClassesFromPackage(packageName);
+            }
+            classesToScan.add(mainClass);
             autoRegisterCest();
+        }
     }
 
     public static ApplicationContext init(Class<?> mainClass, String... args) throws Exception {
@@ -56,8 +54,8 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public ApplicationContext run() throws Exception {
         registerEggFromCests();
-//        if(isAutoConfigApp)
-//            autoRegisterEggs();
+        if(isAutoConfigApp)
+            autoRegisterEggs();
         openEggs();
         return this;
     }
@@ -68,26 +66,23 @@ public class SnakeApplication implements ApplicationContext {
 
     private void autoRegisterCest() throws Exception{
         LogUtils.info("Auto registering cest eggs", SnakeApplication.class, true);
-        for (String packageName : packages) {
-            var classes = PackageUtils.getClassesFromPackage(packageName);
-            for (Class<?> clazz : classes) {
+            for (Class<?> clazz : classesToScan) {
                 if (!clazz.isInterface())
                     registerCest(clazz);
             }
-        }
     }
 
     private void registerEggFromCests() throws Exception {
-        if (cest ==  null || cest.size() < 1) {
+        if ((cest == null || cest.size() < 1) && !isAutoConfigApp) {
             throw new Exception("Need to register some cest");
         }
 
-        LogUtils.info("Creating the eggs", SnakeApplication.class, true);
-
-        for (Class<?> clazz : cest)
-            registerEggs(clazz);
-
-        LogUtils.info("All eggs were created", SnakeApplication.class, true);
+        else if(cest != null && cest.size() > 0) {
+            LogUtils.info("Creating the eggs", SnakeApplication.class, true);
+            for (Class<?> clazz : cest)
+                registerEggs(clazz);
+            LogUtils.info("All eggs were created", SnakeApplication.class, true);
+        }
     }
 
     private void registerCest(Class<?> clazz) throws Exception {
@@ -97,17 +92,25 @@ public class SnakeApplication implements ApplicationContext {
         }
     }
     private void autoRegisterEggs() throws Exception {
-        for (String packageName : packages) {
-            var classes = PackageUtils.getClassesFromPackage(packageName);
-            for (Class<?> clazz : classes) {
-                if (!clazz.isInterface())
-                    registerEggs(clazz);
+        LogUtils.info("Auto registering eggs", SnakeApplication.class, true);
+        for (Class<?> clazz : classesToScan) {
+            if (!clazz.isInterface()) {
+                for (Field field : clazz.getDeclaredFields()) {
+                    if (field.isAnnotationPresent(OpenEgg.class)) {
+                        String name = field.getAnnotation(OpenEgg.class).name().isEmpty()
+                                ? field.getType().getSimpleName()
+                                : field.getAnnotation(OpenEgg.class).name();
+                        eggs.put(name, getClassInstance(field.getType()));
+                        LogUtils.info("The autoegg "+name+" with the type "+field.getType().getSimpleName()+" was created", SnakeApplication.class, showTrace);
+                    }
+                }
             }
+
         }
     }
 
     private void registerEggs(Class<?> clazz) throws Exception {
-        Object classInstance = clazz.getDeclaredConstructor().newInstance();
+        Object classInstance = getClassInstance(clazz);
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(Egg.class)) {
                 Class<?> type = method.getReturnType();
@@ -120,32 +123,41 @@ public class SnakeApplication implements ApplicationContext {
         }
     }
 
+    private Object getClassInstance(Class<?> clazz) throws Exception {
+        if (!clazz.isAnnotationPresent(CustomConstructor.class)) {
+            return clazz.getDeclaredConstructor().newInstance();
+        }
+
+        return null;
+    }
+
     private void openEggs() throws Exception {
-        if (eggs.size() < 1)
-            throw new Exception("No exists egg");
-        if (classesToScan ==  null || classesToScan.length < 1)
+        if ((classesToScan == null || classesToScan.size() < 1))
             throw new Exception("No exists classes to be scanned");
 
         for (Class<?> clazz : classesToScan) {
-            LogUtils.info("Opening eggs of "+clazz.getName(), SnakeApplication.class, showTrace);
-
             for (Field field : clazz.getDeclaredFields()) {
                 if (field.isAnnotationPresent(OpenEgg.class)) {
+                    LogUtils.info("Opening eggs of "+clazz.getName(), SnakeApplication.class, showTrace);
                     String name = field.getAnnotation(OpenEgg.class).name().isEmpty()
                             ? field.getType().getSimpleName()
                             : field.getAnnotation(OpenEgg.class).name();
                     Object selfInstance = eggs.get(clazz.getSimpleName());
                     Object injection = eggs.get(name);
-
-                    if (injection ==  null) {
+                    if (injection == null) {
                         for (Object obj : eggs.values()) {
-                            if (obj.getClass() ==  field.getType())
+                            if (obj.getClass() == field.getType())
                                 injection = obj;
                         }
                     }
 
-                    if (injection ==  null)
-                        throw new Exception("No egg found with the class "+field.getType());
+                    if (injection == null) {
+                        if (cest.isEmpty())
+                            throw new Exception("No egg found with the class "+field.getType());
+                        injection = getClassInstance(field.getType());
+                        eggs.put(name, injection);
+                        LogUtils.info("The egg "+name+" with the type "+field.getType().getSimpleName()+" was created and opened", SnakeApplication.class, showTrace);
+                    }
 
                     boolean isAccessible = field.isAccessible();
                     if (!isAccessible)
@@ -158,7 +170,6 @@ public class SnakeApplication implements ApplicationContext {
             }
         }
         LogUtils.info("All eggs were opened", SnakeApplication.class, true);
-
     }
 
     @Override
@@ -175,7 +186,13 @@ public class SnakeApplication implements ApplicationContext {
 
     @Override
     public ApplicationContext classesToScan(Class<?>[] classes){
-        this.classesToScan = classes;
+        for (Class<?> clazz : classes) {
+            if (this.classesToScan.contains(clazz)) {
+                LogUtils.warn("The class "+clazz.getSimpleName()+" is already registered like cest. Not added again", SnakeApplication.class, true);
+                continue;
+            }
+            this.classesToScan.add(clazz);
+        }
         return this;
     }
 
@@ -193,7 +210,7 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public <T> T getEgg(Class<T> clazz) throws Exception {
         for (Object classes : eggs.values()) {
-            if(classes.getClass() ==  clazz)
+            if(classes.getClass() == clazz)
                 return (T) classes;
         }
         throw new Exception("No Egg found");
@@ -202,7 +219,7 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public <T> T getEgg(String eggName, Class<T> clazz) throws Exception {
         var obj = eggs.get(eggName);
-        if(obj.getClass() ==  clazz)
+        if(obj.getClass() == clazz)
             return (T) obj;
         throw new Exception("No Egg found with this name or class");
     }
@@ -215,7 +232,7 @@ public class SnakeApplication implements ApplicationContext {
     @Override
     public boolean containsEgg(Class<?> clazz) {
         for (Object classes : eggs.values()) {
-            if(classes.getClass() ==  clazz)
+            if(classes.getClass() == clazz)
                 return true;
         }
         return false;

@@ -1,4 +1,4 @@
 com.marioparrilla.snake
-com.marioparrilla.snake.Annotations
-com.marioparrilla.snake.Context
+com.marioparrilla.snake.annotations
+com.marioparrilla.snake.context
 com.marioparrilla.snake.ObjectsToTest
