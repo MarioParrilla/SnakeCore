@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.marioparrilla.snake.Annotations"},{"l":"com.marioparrilla.snake.Context"},{"l":"com.marioparrilla.snake.Utils"}];updateSearchResults();
