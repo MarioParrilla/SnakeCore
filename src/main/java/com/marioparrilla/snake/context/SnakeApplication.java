@@ -38,6 +38,7 @@ public class SnakeApplication implements ApplicationContext {
         this.cest = new ArrayList<>();
         this.classesToScan = new ArrayList<>();
         this.isAutoConfigApp = isAutoConfigurableApplication();
+        printBanner();
         if (this.isAutoConfigApp) {
             autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
             autoScanClasses();
@@ -312,5 +313,13 @@ public class SnakeApplication implements ApplicationContext {
     public boolean containsEgg(String eggName, Class<?> clazz) {
         var obj = eggs.get(eggName);
         return obj != null && obj.getClass() == clazz;
+    }
+
+    private void printBanner() {
+        System.out.println("                 _                           \n" +
+                " ___ _ __   __ _| | _____  ___ ___  _ __ ___ \n" +
+                "/ __| '_ \\ / _` | |/ / _ \\/ __/ _ \\| '__/ _ \\\n" +
+                "\\__ \\ | | | (_| |   <  __/ (_| (_) | | |  __/\n" +
+                "|___/_| |_|\\__,_|_|\\_\\___|\\___\\___/|_|  \\___| v0.1.4 by MarioParrilla");
     }
 }
