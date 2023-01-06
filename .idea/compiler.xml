@@ -10,6 +10,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="LearningIoC" />
+        <module name="snake-core" />
       </profile>
     </annotationProcessing>
   </component>

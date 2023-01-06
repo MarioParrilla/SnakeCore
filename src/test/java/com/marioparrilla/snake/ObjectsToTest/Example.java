@@ -5,7 +5,7 @@ import com.marioparrilla.snake.annotations.CustomParam;
 
 @CustomConstructor
 public class Example {
-    private String name;
+    private String name = "No name";
 
     public Example(String name) {
         this.name = name;

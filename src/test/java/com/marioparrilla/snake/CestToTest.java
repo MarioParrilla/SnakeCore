@@ -15,11 +15,16 @@ public class CestToTest {
 
     @Egg(name = "idForExampleClass")
     public String getIdString() {
-        return "mario";
+        return "CustomParam";
     }
 
-    @Egg(name = "exa2")
+    @Egg
+    public String getIdString0() {
+        return "NoCustomParam";
+    }
+
+    @Egg(name = "Example")
     public Example getExample() {
-        return new Example("Exa2");
+        return new Example("Example");
     }
 }
