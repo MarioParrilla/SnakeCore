@@ -3,10 +3,17 @@ package com.marioparrilla.snake.context;
 public interface ApplicationContext {
 
     /**
-     * @param cest List of the classes that has the eggs to inject
+     * Create the context calling submethods to get the eggs of the classes and inject the eggs.
+     * @return ApplicationContext current context
+     * @throws Exception
+     */
+    ApplicationContext run() throws Exception;
+
+    /**
+     * @param cests List of the classes that has the eggs to inject
      * @return ApplicationContext current context
      */
-    ApplicationContext registerCestEggsClass(Class<?>[] cest);
+    ApplicationContext cestsToScan(Class<?>[] cests);
 
     /**
      * @param classes List of the classes to scan and inject the eggs
@@ -18,14 +25,32 @@ public interface ApplicationContext {
      * This method enable the logging via output in console
      * @return ApplicationContext current context
      */
-    ApplicationContext enableTrace();
+    ApplicationContext enableVerboseLogTrace();
 
     /**
-     * Create the context calling submethods to get the eggs of the classes and inject the eggs.
-     * @return ApplicationContext current context
+     * This method register the cest class.
+     * @param clazz The cest class to be registered.
+     */
+    void registerCest(Class<?> clazz);
+
+    /**
+     * This method goes through the registered cest and creating her variables with the @Egg annotation.
      * @throws Exception
      */
-    ApplicationContext run() throws Exception;
+    void registerCestEggs() throws Exception;
+
+    /**
+     * This method goes through the class (usually a cest) and it's looking for the @Egg annotation to register it.
+     * @param clazz This class has the eggs to be registered, usually the cests.
+     * @throws Exception
+     */
+    void registerEggs(Class<?> clazz) throws Exception;
+
+    /**
+     * This method goes through the classes looking for the @OpenEgg annotation to give to the variable the instance required.
+     * @throws Exception
+     */
+    void openEggs() throws Exception;
 
     /**
      * @return All eggs registered
@@ -70,4 +95,9 @@ public interface ApplicationContext {
      * @return True if it has this egg else false
      */
     boolean containsEgg(String eggName, Class<?> clazz);
+
+    /**
+     * This method prints the name/logo of the library
+     */
+    void printBanner();
 }
