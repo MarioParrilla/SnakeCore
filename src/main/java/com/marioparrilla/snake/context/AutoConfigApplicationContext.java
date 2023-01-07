@@ -1,6 +1,6 @@
 package com.marioparrilla.snake.context;
 
-public interface AutoConfigApplicationContext extends ApplicationContext {
+public interface AutoConfigApplicationContext extends FileConfigApplicationContext {
 
     @Override
     AutoConfigApplicationContext run() throws Exception;
