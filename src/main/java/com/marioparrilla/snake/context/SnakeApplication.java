@@ -1,17 +1,18 @@
 package com.marioparrilla.snake.context;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.marioparrilla.snake.annotations.*;
 import com.marioparrilla.snake.utils.LogUtils;
 import com.marioparrilla.snake.utils.PackageUtils;
 
+import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SnakeApplication implements AutoConfigApplicationContext {
 
@@ -30,6 +31,13 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     private boolean showTrace = false;
 
     private boolean isAutoConfigApp;
+
+    private Map<String, Object> contextFileConfig = new HashMap<>() {{
+        put("props_file_path", null);
+        put("verbose_log_trace", false);
+        put("auto_configuration_scan", null);
+        put("auto_configuration_filter", null);
+    }};
 
     private SnakeApplication() {}
 
@@ -231,12 +239,40 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         return this;
     }
 
-    /**
-     *  This method returns a instance of the class
-     * @param clazz Class to be instanced
-     * @return Returns a class instance via the constructor
-     * @throws Exception
-     */
+    @Override
+    public void readConfigFile() {
+        FileReader fr = null;
+        try {
+            File file = new File (".\\snake.conf.json");
+            fr = new FileReader (file);
+            BufferedReader br = new BufferedReader(fr);
+            String line;
+            StringBuilder lines = new StringBuilder();
+            LogUtils.info("Reading configuration file", SnakeApplication.class, showTrace);
+            while((line=br.readLine())!=null)
+                lines.append(line);
+
+            ObjectMapper mapper = new ObjectMapper();
+            HashMap<String, Object> config = mapper.readValue(lines.toString(), HashMap.class);
+            config.keySet().forEach(key -> contextFileConfig.put(key, config.get(key)));
+            LogUtils.info("Configuration file read", SnakeApplication.class, showTrace);
+        } catch (JsonProcessingException e) {
+            LogUtils.error("Can not parse the configuration file", SnakeApplication.class, showTrace);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LogUtils.info("Not exists configuration file", SnakeApplication.class, showTrace);
+        }
+        finally{
+            try{
+                if( null != fr ){
+                    fr.close();
+                }
+            }catch (Exception e2){
+                e2.printStackTrace();
+            }
+        }
+    }
+
     private Object getClassInstance(Class<?> clazz) throws Exception {
         LogUtils.info("Creating class instance of "+clazz.getSimpleName(), SnakeApplication.class, showTrace);
         if (!clazz.isAnnotationPresent(CustomConstructor.class))
