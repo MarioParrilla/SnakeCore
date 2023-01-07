@@ -16,6 +16,8 @@ public interface FileConfigApplicationContext extends ApplicationContext {
     /**
      * This method read the configuration file and modify the default configuration
      */
-    void readConfigFile();
+    void readConfigurationFile();
+
+    void readPropertiesFile();
 
 }

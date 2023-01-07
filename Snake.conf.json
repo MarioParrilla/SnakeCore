@@ -1,4 +1,4 @@
 {
-  "props_file_path": "./",
+  "props_file_path": "./src/main/java/com/marioparrilla/snake/",
   "verbose_log_trace": true
 }

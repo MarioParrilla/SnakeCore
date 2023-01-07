@@ -36,10 +36,11 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     private String propsFilePath;
 
-    private final Map<String, Object> contextFileConfig = new HashMap<>() {{
+    private final Map<String, Object> contextConfigFile = new HashMap<>() {{
         put("props_file_path", "./");
         put("verbose_log_trace", false);
     }};
+    private final Properties contextPropsFile = new Properties();
 
     private SnakeApplication() {}
 
@@ -61,8 +62,8 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     public AutoConfigApplicationContext run() throws Exception {
         long start = System.currentTimeMillis();
         printBanner();
-        readConfigFile();
-        loadFileConfig();
+        readConfigurationFile();
+        loadConfigurationFile();
         if(isAutoConfigApp) {
             autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
             autoScanClasses();
@@ -246,7 +247,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     }
 
     @Override
-    public void readConfigFile() {
+    public void readConfigurationFile() {
         FileReader fr = null;
         try {
             File file = new File (".\\Snake.conf.json");
@@ -260,7 +261,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
             ObjectMapper mapper = new ObjectMapper();
             HashMap<String, Object> config = mapper.readValue(lines.toString(), HashMap.class);
-            config.keySet().forEach(key -> contextFileConfig.put(key, config.get(key)));
+            config.keySet().forEach(key -> contextConfigFile.put(key, config.get(key)));
             LogUtils.info("Configuration file read", SnakeApplication.class, showTrace);
 
             //TODO: PREGUNTAR CUANDO NO TIENE CONFIGURACION SI QUIERE QUE SE AUTOGENERE UNA CONFIGURACION POR DEFECTO
@@ -284,9 +285,9 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     /**
      * This method recover the configuration took from the Snake.config.json file and load it
      */
-    private void loadFileConfig() {
+    private void loadConfigurationFile() {
         LogUtils.info("Loading configurations", SnakeApplication.class, showTrace);
-        Object temp = contextFileConfig.get("props_file_path");
+        Object temp = contextConfigFile.get("props_file_path");
         if (!(temp instanceof String)) {
             propsFilePath = ".\\";
             LogUtils.error("Snake.conf.json is not correct:\n{\n\tprops_file_path = "+temp+"\n}", SnakeApplication.class, showTrace);
@@ -294,7 +295,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         }
         else
             propsFilePath = (String) temp;
-        temp = contextFileConfig.get("verbose_log_trace");
+        temp = contextConfigFile.get("verbose_log_trace");
         if (!(temp instanceof Boolean)) {
             showTrace = false;
             LogUtils.error("Snake.conf.json is not correct:\n{\n\tverbose_log_trace = "+temp+"\n}", SnakeApplication.class, true);
@@ -304,6 +305,32 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             showTrace = (boolean) temp;
         LogUtils.info("Configurations loaded", SnakeApplication.class, showTrace);
 
+    }
+
+    @Override
+    public void readPropertiesFile() {
+        FileReader fr = null;
+        try {
+            File file = new File (propsFilePath + "Snake.props");
+            fr = new FileReader (file);
+            BufferedReader br = new BufferedReader(fr);
+            String line;
+            LogUtils.info("Reading properties file", SnakeApplication.class, showTrace);
+            contextPropsFile.load(br);
+            LogUtils.info("Properties file read", SnakeApplication.class, showTrace);
+        }
+        catch (IOException e) {
+            LogUtils.info("Not exists properties file", SnakeApplication.class, showTrace);
+        }
+        finally{
+            try{
+                if( null != fr ){
+                    fr.close();
+                }
+            }catch (Exception e2){
+                e2.printStackTrace();
+            }
+        }
     }
 
     private Object getClassInstance(Class<?> clazz) throws Exception {
