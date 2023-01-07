@@ -17,6 +17,9 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     private static final String ANNOTATIONS_PACKAGE = "com.marioparrilla.snake.annotations";
     private static final String CURRENT_VERSION = "v0.1.5";
+
+    private static AutoConfigApplicationContext singletonContext;
+
     private Class<?> mainClass;
 
     private AutoConfig autoConfigAnnotation;
@@ -40,7 +43,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     private SnakeApplication() {}
 
-    private SnakeApplication(Class<?> mainClass, String... args) throws Exception {
+    private SnakeApplication(Class<?> mainClass, String... args) {
         this.eggs = new HashMap<>();
         this.mainClass = mainClass;
         this.cest = new ArrayList<>();
@@ -49,7 +52,9 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     }
 
     public static AutoConfigApplicationContext init(Class<?> mainClass, String... args) throws Exception {
-        return new SnakeApplication(mainClass, args);
+        if (singletonContext == null)
+            singletonContext = new SnakeApplication(mainClass, args);
+        return singletonContext;
     }
 
     @Override
@@ -258,7 +263,6 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             config.keySet().forEach(key -> contextFileConfig.put(key, config.get(key)));
             LogUtils.info("Configuration file read", SnakeApplication.class, showTrace);
 
-            //TODO: CARGAR LA CONFIGURACION Y LLAMARLO
             //TODO: PREGUNTAR CUANDO NO TIENE CONFIGURACION SI QUIERE QUE SE AUTOGENERE UNA CONFIGURACION POR DEFECTO
         } catch (JsonProcessingException e) {
             LogUtils.error("Can not parse the configuration file", SnakeApplication.class, showTrace);
