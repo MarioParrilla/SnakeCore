@@ -13,9 +13,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class SnakeApplication implements ApplicationContext {
+public class SnakeApplication implements AutoConfigApplicationContext {
 
     private static final String ANNOTATIONS_PACKAGE = "com.marioparrilla.snake.annotations";
+    private static final String CURRENT_VERSION = "v0.1.5";
     private Class<?> mainClass;
 
     private AutoConfig autoConfigAnnotation;
@@ -38,35 +39,39 @@ public class SnakeApplication implements ApplicationContext {
         this.cest = new ArrayList<>();
         this.classesToScan = new ArrayList<>();
         this.isAutoConfigApp = isAutoConfigurableApplication();
-        printBanner();
-        if (this.isAutoConfigApp) {
-            autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
-            autoScanClasses();
-            autoRegisterCest();
-        }
     }
 
-    public static ApplicationContext init(Class<?> mainClass, String... args) throws Exception {
+    public static AutoConfigApplicationContext init(Class<?> mainClass, String... args) throws Exception {
         return new SnakeApplication(mainClass, args);
     }
 
     @Override
-    public ApplicationContext run() throws Exception {
+    public AutoConfigApplicationContext run() throws Exception {
         long start = System.currentTimeMillis();
-        registerEggFromCests();
-        if(isAutoConfigApp)
+        printBanner();
+        if(isAutoConfigApp) {
+            autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
+            autoScanClasses();
+            autoRegisterCest();
+            registerCestEggs();
             autoRegisterEggs();
+        }
+        else {
+            registerCestEggs();
+        }
         openEggs();
         long end = System.currentTimeMillis();
         LogUtils.info("Time: "+(end - start)+" ms", SnakeApplication.class, true);
         return this;
     }
 
-    private boolean isAutoConfigurableApplication() throws Exception {
+    @Override
+    public boolean isAutoConfigurableApplication() {
         return mainClass.isAnnotationPresent(AutoConfig.class);
     }
 
-    private void autoRegisterCest() throws Exception{
+    @Override
+    public void autoRegisterCest() throws Exception {
         LogUtils.info("Auto registering cest eggs", SnakeApplication.class, true);
             for (Class<?> clazz : classesToScan) {
                 if (!clazz.isInterface() && !clazz.isEnum())
@@ -74,9 +79,10 @@ public class SnakeApplication implements ApplicationContext {
             }
     }
 
-    private void registerEggFromCests() throws Exception {
+    @Override
+    public void registerCestEggs() throws Exception {
         if ((cest == null || cest.size() < 1) && !isAutoConfigApp) {
-            throw new Exception("Need to register some cest");
+            throw new Exception("Needs to register some cest");
         }
         else if(cest != null && cest.size() > 0) {
             LogUtils.info("Creating the eggs", SnakeApplication.class, true);
@@ -86,14 +92,16 @@ public class SnakeApplication implements ApplicationContext {
         }
     }
 
-    private void registerCest(Class<?> clazz) throws Exception {
+    @Override
+    public void registerCest(Class<?> clazz) {
         if (clazz.isAnnotationPresent(Cest.class)) {
             this.cest.add(clazz);
             LogUtils.info("The Cest from the class "+clazz.getSimpleName()+" was registered", SnakeApplication.class, showTrace);
         }
     }
 
-    private void autoRegisterEggs() throws Exception {
+    @Override
+    public void autoRegisterEggs() throws Exception {
         LogUtils.info("Auto registering eggs", SnakeApplication.class, true);
         for (Class<?> clazz : classesToScan) {
             if (!clazz.isInterface() && !clazz.isEnum()) {
@@ -115,7 +123,8 @@ public class SnakeApplication implements ApplicationContext {
         }
     }
 
-    private void registerEggs(Class<?> clazz) throws Exception {
+    @Override
+    public void registerEggs(Class<?> clazz) throws Exception {
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(Egg.class)) {
                 Class<?> type = method.getReturnType();
@@ -132,29 +141,8 @@ public class SnakeApplication implements ApplicationContext {
         }
     }
 
-    private Object getClassInstance(Class<?> clazz) throws Exception {
-        LogUtils.info("Creating class instance of "+clazz.getSimpleName(), SnakeApplication.class, showTrace);
-        if (!clazz.isAnnotationPresent(CustomConstructor.class))
-            return clazz.getDeclaredConstructor().newInstance();
-
-        Parameter[] params = clazz.getDeclaredConstructors()[0].getParameters();
-        List<Object> paramsInstances = new ArrayList<>(params.length);
-        for (Parameter param : params) {
-            Annotation[] annotations = param.getAnnotations();
-            if (annotations.length > 0) {
-                for (Annotation annotation : annotations) {
-                    if (annotation.annotationType() == CustomParam.class)
-                        paramsInstances.add(getEgg(((CustomParam) annotation).eggName(), param.getType()));
-                }
-            }
-            else {
-                paramsInstances.add(getEgg(param.getType()));
-            }
-        }
-        return clazz.getDeclaredConstructors()[0].newInstance(paramsInstances.toArray());
-    }
-
-    private void openEggs() throws Exception {
+    @Override
+    public void openEggs() throws Exception {
         if ((classesToScan == null || classesToScan.size() < 1))
             throw new Exception("No exists classes to be scanned");
 
@@ -197,8 +185,8 @@ public class SnakeApplication implements ApplicationContext {
     }
 
     @Override
-    public ApplicationContext registerCestEggsClass(Class<?>[] cest) {
-        for (Class<?> clazz : cest) {
+    public AutoConfigApplicationContext cestsToScan(Class<?>[] cests) {
+        for (Class<?> clazz : cests) {
             if (this.cest.contains(clazz)) {
                 LogUtils.warn("The class "+clazz.getSimpleName()+" is already registered like cest. Not added again", SnakeApplication.class, true);
                 continue;
@@ -208,28 +196,31 @@ public class SnakeApplication implements ApplicationContext {
         return this;
     }
 
-    private void autoScanClasses() {
+    @Override
+    public void autoScanClasses() {
         for (Package packge : Thread.currentThread().getContextClassLoader().getDefinedPackages()) {
             var packageName = packge.getName();
             if (packageName.contains(mainClass.getPackageName()))
-                if (!packageName.contains(ANNOTATIONS_PACKAGE))
+                if (!packageName.contains(ANNOTATIONS_PACKAGE)){
+                    LogUtils.info("Auto filtering and scanning the classes", SnakeApplication.class, true);
                     this.classesToScan.addAll(PackageUtils.getClassesFromPackage(packageName).stream()
                             .filter(e -> {
                                 if(isAutoConfigFilter() && includedInFilter(e.getSimpleName())) {
-                                    LogUtils.info("Auto Filter: The class "+e.getSimpleName()+" was filtered", SnakeApplication.class, true);
+                                    LogUtils.info("Auto Filter: The class "+e.getSimpleName()+" was filtered", SnakeApplication.class, showTrace);
                                     return false;
                                 }
                                 else{
-                                    LogUtils.info("Auto Scan: The class "+e.getSimpleName()+" was scanned", SnakeApplication.class, true);
+                                    LogUtils.info("Auto Scan: The class "+e.getSimpleName()+" was scanned", SnakeApplication.class, showTrace);
                                     return isAutoConfigScan() && includedInScan(e.getSimpleName());
                                 }
                             }).toList());
+                }
         }
         this.classesToScan.add(mainClass);
     }
 
     @Override
-    public ApplicationContext classesToScan(Class<?>[] classes){
+    public AutoConfigApplicationContext classesToScan(Class<?>[] classes){
         for (Class<?> clazz : classes) {
             if (this.classesToScan.contains(clazz)) {
                 LogUtils.warn("The class "+clazz.getSimpleName()+" is already registered. Not added again", SnakeApplication.class, true);
@@ -240,30 +231,62 @@ public class SnakeApplication implements ApplicationContext {
         return this;
     }
 
-    private boolean isAutoConfigScan() {
+    /**
+     *  This method returns a instance of the class
+     * @param clazz Class to be instanced
+     * @return Returns a class instance via the constructor
+     * @throws Exception
+     */
+    private Object getClassInstance(Class<?> clazz) throws Exception {
+        LogUtils.info("Creating class instance of "+clazz.getSimpleName(), SnakeApplication.class, showTrace);
+        if (!clazz.isAnnotationPresent(CustomConstructor.class))
+            return clazz.getDeclaredConstructor().newInstance();
+
+        Parameter[] params = clazz.getDeclaredConstructors()[0].getParameters();
+        List<Object> paramsInstances = new ArrayList<>(params.length);
+        for (Parameter param : params) {
+            Annotation[] annotations = param.getAnnotations();
+            if (annotations.length > 0) {
+                for (Annotation annotation : annotations) {
+                    if (annotation.annotationType() == CustomParam.class)
+                        paramsInstances.add(getEgg(((CustomParam) annotation).eggName(), param.getType()));
+                }
+            }
+            else {
+                paramsInstances.add(getEgg(param.getType()));
+            }
+        }
+        return clazz.getDeclaredConstructors()[0].newInstance(paramsInstances.toArray());
+    }
+
+    @Override
+    public boolean isAutoConfigScan() {
         if (autoConfigAnnotation == null) return false;
         return autoConfigAnnotation.scan().length > 0;
     }
 
-    private boolean isAutoConfigFilter() {
+    @Override
+    public boolean isAutoConfigFilter() {
         if (autoConfigAnnotation == null) return false;
         return autoConfigAnnotation.filter().length > 0;
     }
 
-    private boolean includedInScan(String className) {
+    @Override
+    public boolean includedInScan(String className) {
         if (autoConfigAnnotation == null) return false;
         Class<?>[] toScan = autoConfigAnnotation.scan();
         return Arrays.stream(toScan).anyMatch(e -> e.getSimpleName().equals(className));
     }
 
-    private boolean includedInFilter(String className) {
+    @Override
+    public boolean includedInFilter(String className) {
         if (autoConfigAnnotation == null) return false;
         Class<?>[] toFilter = autoConfigAnnotation.filter();
         return Arrays.stream(toFilter).anyMatch(e -> e.getSimpleName().equals(className));
     }
 
     @Override
-    public ApplicationContext enableTrace() {
+    public AutoConfigApplicationContext enableVerboseLogTrace() {
         showTrace = true;
         return this;
     }
@@ -315,11 +338,12 @@ public class SnakeApplication implements ApplicationContext {
         return obj != null && obj.getClass() == clazz;
     }
 
-    private void printBanner() {
+    @Override
+    public void printBanner() {
         System.out.println("                 _                           \n" +
                 " ___ _ __   __ _| | _____  ___ ___  _ __ ___ \n" +
                 "/ __| '_ \\ / _` | |/ / _ \\/ __/ _ \\| '__/ _ \\\n" +
                 "\\__ \\ | | | (_| |   <  __/ (_| (_) | | |  __/\n" +
-                "|___/_| |_|\\__,_|_|\\_\\___|\\___\\___/|_|  \\___| v0.1.4 by MarioParrilla");
+                "|___/_| |_|\\__,_|_|\\_\\___|\\___\\___/|_|  \\___| "+CURRENT_VERSION+" by MarioParrilla");
     }
 }
