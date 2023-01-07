@@ -1,7 +1,6 @@
 package com.marioparrilla.snake.context;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.marioparrilla.snake.annotations.*;
 import com.marioparrilla.snake.utils.LogUtils;
 import com.marioparrilla.snake.utils.PackageUtils;
@@ -32,11 +31,11 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     private boolean isAutoConfigApp;
 
-    private Map<String, Object> contextFileConfig = new HashMap<>() {{
-        put("props_file_path", null);
+    private String propsFilePath;
+
+    private final Map<String, Object> contextFileConfig = new HashMap<>() {{
+        put("props_file_path", "./");
         put("verbose_log_trace", false);
-        put("auto_configuration_scan", null);
-        put("auto_configuration_filter", null);
     }};
 
     private SnakeApplication() {}
@@ -57,6 +56,8 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     public AutoConfigApplicationContext run() throws Exception {
         long start = System.currentTimeMillis();
         printBanner();
+        readConfigFile();
+        loadFileConfig();
         if(isAutoConfigApp) {
             autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
             autoScanClasses();
@@ -243,7 +244,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     public void readConfigFile() {
         FileReader fr = null;
         try {
-            File file = new File (".\\snake.conf.json");
+            File file = new File (".\\Snake.conf.json");
             fr = new FileReader (file);
             BufferedReader br = new BufferedReader(fr);
             String line;
@@ -256,6 +257,9 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             HashMap<String, Object> config = mapper.readValue(lines.toString(), HashMap.class);
             config.keySet().forEach(key -> contextFileConfig.put(key, config.get(key)));
             LogUtils.info("Configuration file read", SnakeApplication.class, showTrace);
+
+            //TODO: CARGAR LA CONFIGURACION Y LLAMARLO
+            //TODO: PREGUNTAR CUANDO NO TIENE CONFIGURACION SI QUIERE QUE SE AUTOGENERE UNA CONFIGURACION POR DEFECTO
         } catch (JsonProcessingException e) {
             LogUtils.error("Can not parse the configuration file", SnakeApplication.class, showTrace);
             e.printStackTrace();
@@ -271,6 +275,31 @@ public class SnakeApplication implements AutoConfigApplicationContext {
                 e2.printStackTrace();
             }
         }
+    }
+
+    /**
+     * This method recover the configuration took from the Snake.config.json file and load it
+     */
+    private void loadFileConfig() {
+        LogUtils.info("Loading configurations", SnakeApplication.class, showTrace);
+        Object temp = contextFileConfig.get("props_file_path");
+        if (!(temp instanceof String)) {
+            propsFilePath = ".\\";
+            LogUtils.error("Snake.conf.json is not correct:\n{\n\tprops_file_path = "+temp+"\n}", SnakeApplication.class, showTrace);
+            LogUtils.error("Auto setted to:\n{\n\tprops_file_path = \".\\\"\n}", SnakeApplication.class, true);
+        }
+        else
+            propsFilePath = (String) temp;
+        temp = contextFileConfig.get("verbose_log_trace");
+        if (!(temp instanceof Boolean)) {
+            showTrace = false;
+            LogUtils.error("Snake.conf.json is not correct:\n{\n\tverbose_log_trace = "+temp+"\n}", SnakeApplication.class, true);
+            LogUtils.error("Auto setted to:\n{\n\tverbose_log_trace = false\n}", SnakeApplication.class, true);
+        }
+        else
+            showTrace = (boolean) temp;
+        LogUtils.info("Configurations loaded", SnakeApplication.class, showTrace);
+
     }
 
     private Object getClassInstance(Class<?> clazz) throws Exception {
