@@ -398,7 +398,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     /**
      * This method set the injection to one class instance passed.
-     * @param field Its the field of one class that wants to be setted one value.
+     * @param field It's the field of one class that wants to be setted one value.
      * @param selfInstance An instance of the field.
      * @param injection The value to be setted to the instance
      * @throws IllegalAccessException
