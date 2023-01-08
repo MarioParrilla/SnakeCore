@@ -1,7 +1,9 @@
 # Snake Core Library
 
-## DOCUMENTATION: (Under developing but you can check somethings)
+## DOCUMENTATION:
 ## https://snakecore.marioparrilla.com/
+
+## If you wants it's to know the last features, look the last feature or the others.
 
 ### To Implement in your project with:
 >**Change {CurrentVersion} with the current version**
