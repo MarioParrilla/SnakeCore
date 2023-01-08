@@ -64,6 +64,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         printBanner();
         readConfigurationFile();
         loadConfigurationFile();
+        readPropertiesFile();
         if(isAutoConfigApp) {
             autoConfigAnnotation = mainClass.getAnnotation(AutoConfig.class);
             autoScanClasses();
@@ -74,6 +75,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         else {
             registerCestEggs();
         }
+        loadPropertiesFile();
         openEggs();
         long end = System.currentTimeMillis();
         LogUtils.info("Time: "+(end - start)+" ms", SnakeApplication.class, true);
@@ -86,7 +88,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     }
 
     @Override
-    public void autoRegisterCest() throws Exception {
+    public void autoRegisterCest() {
         LogUtils.info("Auto registering cest eggs", SnakeApplication.class, true);
             for (Class<?> clazz : classesToScan) {
                 if (!clazz.isInterface() && !clazz.isEnum())
@@ -100,10 +102,10 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             throw new Exception("Needs to register some cest");
         }
         else if(cest != null && cest.size() > 0) {
-            LogUtils.info("Creating the eggs", SnakeApplication.class, true);
+            LogUtils.info("Creating the cest eggs", SnakeApplication.class, true);
             for (Class<?> clazz : cest)
                 registerEggs(clazz);
-            LogUtils.info("All eggs were created", SnakeApplication.class, true);
+            LogUtils.info("All cest eggs were created", SnakeApplication.class, true);
         }
     }
 
@@ -140,6 +142,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
 
     @Override
     public void registerEggs(Class<?> clazz) throws Exception {
+        Object clazzInstance = getClassInstance(clazz);
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(Egg.class)) {
                 Class<?> type = method.getReturnType();
@@ -147,10 +150,10 @@ public class SnakeApplication implements AutoConfigApplicationContext {
                         ? type.getSimpleName()
                         : method.getAnnotation(Egg.class).name();
                 //Checking if the egg already exists, if not its created
-                boolean currentEggExists = containsEgg(name, clazz);
+                boolean currentEggExists = containsEgg(name, method.getReturnType());
                 if (!currentEggExists) {
-                    eggs.put(name, method.invoke(getClassInstance(clazz)));
-                    LogUtils.info("The egg "+ name +" with the type "+ clazz.getSimpleName()+" was created", SnakeApplication.class, showTrace);
+                    eggs.put(name, method.invoke(clazzInstance));
+                    LogUtils.info("The egg "+ name +" with the type "+ method.getReturnType().getSimpleName()+" was created", SnakeApplication.class, showTrace);
                 }
             }
         }
@@ -186,12 +189,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
                         LogUtils.info("The egg "+name+" with the type "+field.getType().getSimpleName()+" was created and opened", SnakeApplication.class, showTrace);
                     }
 
-                    boolean isAccessible = field.isAccessible();
-                    if (!isAccessible)
-                        field.setAccessible(true);
-                    field.set(selfInstance, injection);
-                    if (!isAccessible)
-                        field.setAccessible(false);
+                    setFieldValue(field, selfInstance, injection);
                     LogUtils.info("The Egg "+field.getName()+" was instanced with the name "+name, SnakeApplication.class, showTrace);
                 }
             }
@@ -255,21 +253,19 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             BufferedReader br = new BufferedReader(fr);
             String line;
             StringBuilder lines = new StringBuilder();
-            LogUtils.info("Reading configuration file", SnakeApplication.class, showTrace);
+            LogUtils.info("Reading configuration file", SnakeApplication.class, true);
             while((line=br.readLine())!=null)
                 lines.append(line);
 
             ObjectMapper mapper = new ObjectMapper();
             HashMap<String, Object> config = mapper.readValue(lines.toString(), HashMap.class);
             config.keySet().forEach(key -> contextConfigFile.put(key, config.get(key)));
-            LogUtils.info("Configuration file read", SnakeApplication.class, showTrace);
-
-            //TODO: PREGUNTAR CUANDO NO TIENE CONFIGURACION SI QUIERE QUE SE AUTOGENERE UNA CONFIGURACION POR DEFECTO
+            LogUtils.info("Configuration file read", SnakeApplication.class, true);
         } catch (JsonProcessingException e) {
-            LogUtils.error("Can not parse the configuration file", SnakeApplication.class, showTrace);
+            LogUtils.error("Can not parse the configuration file", SnakeApplication.class, true);
             e.printStackTrace();
         } catch (IOException e) {
-            LogUtils.info("Not exists configuration file", SnakeApplication.class, showTrace);
+            LogUtils.error("Not exists configuration file", SnakeApplication.class, true);
         }
         finally{
             try{
@@ -282,15 +278,13 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         }
     }
 
-    /**
-     * This method recover the configuration took from the Snake.config.json file and load it
-     */
-    private void loadConfigurationFile() {
-        LogUtils.info("Loading configurations", SnakeApplication.class, showTrace);
+    @Override
+    public void loadConfigurationFile() {
+        LogUtils.info("Loading configuration file", SnakeApplication.class, true);
         Object temp = contextConfigFile.get("props_file_path");
         if (!(temp instanceof String)) {
             propsFilePath = ".\\";
-            LogUtils.error("Snake.conf.json is not correct:\n{\n\tprops_file_path = "+temp+"\n}", SnakeApplication.class, showTrace);
+            LogUtils.error("Snake.conf.json is not correct:\n{\n\tprops_file_path = "+temp+"\n}", SnakeApplication.class, true);
             LogUtils.error("Auto setted to:\n{\n\tprops_file_path = \".\\\"\n}", SnakeApplication.class, true);
         }
         else
@@ -303,7 +297,7 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         }
         else
             showTrace = (boolean) temp;
-        LogUtils.info("Configurations loaded", SnakeApplication.class, showTrace);
+        LogUtils.info("Configuration file loaded", SnakeApplication.class, true);
 
     }
 
@@ -311,16 +305,16 @@ public class SnakeApplication implements AutoConfigApplicationContext {
     public void readPropertiesFile() {
         FileReader fr = null;
         try {
-            File file = new File (propsFilePath + "Snake.props");
+            File file = new File (propsFilePath + "Snake.properties");
             fr = new FileReader (file);
             BufferedReader br = new BufferedReader(fr);
             String line;
-            LogUtils.info("Reading properties file", SnakeApplication.class, showTrace);
+            LogUtils.info("Reading properties file", SnakeApplication.class, true);
             contextPropsFile.load(br);
-            LogUtils.info("Properties file read", SnakeApplication.class, showTrace);
+            LogUtils.info("Properties file read", SnakeApplication.class, true);
         }
         catch (IOException e) {
-            LogUtils.info("Not exists properties file", SnakeApplication.class, showTrace);
+            LogUtils.error("Not exists properties file", SnakeApplication.class, true);
         }
         finally{
             try{
@@ -333,10 +327,57 @@ public class SnakeApplication implements AutoConfigApplicationContext {
         }
     }
 
+    @Override
+    public void loadPropertiesFile() throws Exception {
+        LogUtils.info("Loading properties file", SnakeApplication.class, true);
+        for (Class<?> clazz : classesToScan) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Prop.class)) {
+                    String name = !field.getAnnotation(Prop.class).name().isEmpty()
+                            ? field.getAnnotation(Prop.class).name()
+                            : null;
+                    if (name == null) {
+                        LogUtils.error("Is not a valid property name: "+name, SnakeApplication.class, true);
+                        return;
+                    }
+                    Object injection = contextPropsFile.get(name);
+                    if (injection == null) {
+                        LogUtils.error("The property name "+name+" is not registered in the properties file", SnakeApplication.class, true);
+                        return;
+                    }
+                    if (field.getType() == String.class)
+                        setFieldValue(field, getClassInstance(field.getType()), injection);
+                    else if (field.getType() == int.class || field.getType() == Integer.class) {
+                        setFieldValue(field, Integer.valueOf("0") , Integer.valueOf(injection.toString()));
+                    }
+                    else if (field.getType() == long.class || field.getType() == Long.class) {
+                        setFieldValue(field, Long.valueOf("0") , Long.valueOf(injection.toString()));
+                    }
+                    else if (field.getType() == float.class || field.getType() == Float.class) {
+                        setFieldValue(field, Float.valueOf("0") , Float.valueOf(injection.toString()));
+                    }
+                    else if (field.getType() == double.class || field.getType() == Double.class) {
+                        setFieldValue(field, Double.valueOf("0") , Double.valueOf(injection.toString()));
+                    }
+                    else if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                        setFieldValue(field, Boolean.valueOf("0"), Boolean.valueOf(injection.toString()));
+                    }
+                }
+            }
+        }
+        LogUtils.info("Properties file loaded", SnakeApplication.class, true);
+    }
+
+    /**
+     *
+     * @param clazz The class to be instanced by her constructor
+     * @return The instance created
+     * @throws Exception
+     */
     private Object getClassInstance(Class<?> clazz) throws Exception {
         LogUtils.info("Creating class instance of "+clazz.getSimpleName(), SnakeApplication.class, showTrace);
         if (!clazz.isAnnotationPresent(CustomConstructor.class))
-            return clazz.getDeclaredConstructor().newInstance();
+            return clazz.getConstructor().newInstance(null);
 
         Parameter[] params = clazz.getDeclaredConstructors()[0].getParameters();
         List<Object> paramsInstances = new ArrayList<>(params.length);
@@ -353,6 +394,32 @@ public class SnakeApplication implements AutoConfigApplicationContext {
             }
         }
         return clazz.getDeclaredConstructors()[0].newInstance(paramsInstances.toArray());
+    }
+
+    /**
+     * This method set the injection to one class instance passed.
+     * @param field Its the field of one class that wants to be setted one value.
+     * @param selfInstance An instance of the field.
+     * @param injection The value to be setted to the instance
+     * @throws IllegalAccessException
+     */
+    private void setFieldValue(Field field, Object selfInstance, Object injection) throws IllegalAccessException {
+        boolean isAccessible = field.isAccessible();
+        if (!isAccessible)
+            field.setAccessible(true);
+        field.set(selfInstance, injection);
+        if (!isAccessible)
+            field.setAccessible(false);
+    }
+
+    @Override
+    public Map<String, Object> getContextConfig() {
+        return contextConfigFile;
+    }
+
+    @Override
+    public Properties getContextProps() {
+        return contextPropsFile;
     }
 
     @Override
